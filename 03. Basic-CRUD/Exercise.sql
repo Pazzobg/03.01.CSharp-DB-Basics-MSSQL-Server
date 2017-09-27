@@ -40,7 +40,7 @@ WHERE Salary BETWEEN 20000 AND 30000
 
 ---===Pr. 10===---
 
-SELECT FirstName + ' ' + MiddleName + ' ' + LastName AS [Full Name] FROM Employees
+SELECT CONCAT(FirstName, ' ', MiddleName, ' ', LastName) AS [Full Name] FROM Employees
 WHERE Salary IN (25000, 14000, 12500, 23600)
 
 ---===Pr. 11===---
