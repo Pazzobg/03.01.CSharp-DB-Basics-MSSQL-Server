@@ -1,7 +1,3 @@
-CREATE DATABASE Relationships
-
-USE Relationships
-
 ---===Pr. 1===---
 
 CREATE TABLE Persons(
@@ -189,6 +185,141 @@ PaymentAmount DECIMAL(8, 2),
 StudentID INT
 CONSTRAINT PK_PaymentsId PRIMARY KEY (PaymentID), 
 CONSTRAINT FK_PmntStudentsId FOREIGN KEY (StudentID) REFERENCES Students(StudentID),
+)
+
+---===Pr. 7===---
+
+CREATE TABLE Towns(
+TownID INT IDENTITY, 
+Name VARCHAR(50)
+CONSTRAINT PK_TownsId PRIMARY KEY (TownId)
+)
+
+CREATE TABLE Addresses(
+AddressID INT IDENTITY, 
+AddressText VARCHAR(50), 
+TownID INT
+CONSTRAINT PK_AddressesId PRIMARY KEY(AddressID), 
+CONSTRAINT FK_AddressesTownsId FOREIGN KEY(TownID) REFERENCES Towns(TownID)
+)
+
+CREATE TABLE Departments(
+DepartmentID INT IDENTITY, 
+Name VARCHAR(50), 
+ManagerID INT
+CONSTRAINT PK_DepartmentsId PRIMARY KEY(DepartmentID)
+)
+
+CREATE TABLE Employees(
+EmployeeID INT IDENTITY, 
+FirstName VARCHAR(50), 
+LastName VARCHAR(50), 
+MiddleName VARCHAR(50), 
+JobTitle VARCHAR(50), 
+DepartmentID INT UNIQUE, 
+ManagerID INT, 
+HireDate DATE, 
+Salary DECIMAL(15, 2), 
+AddressID INT,
+CONSTRAINT PK_EmployeesId PRIMARY KEY(EmployeeID), 
+CONSTRAINT FK_EmployeesManagersId FOREIGN KEY (ManagerID) REFERENCES Employees(EmployeeID), 
+CONSTRAINT FK_EmployeesAddressId FOREIGN KEY (AddressID) REFERENCES Addresses(AddressID) 
+)
+
+--AT THIS POINT FILL IN DATA IN TABLES 'Employees' AND 'Departments'
+
+ALTER TABLE Departments
+ADD CONSTRAINT FK_DepartmentsEmployees FOREIGN KEY (ManagerID) REFERENCES Employees(EmployeeID)
+
+ALTER TABLE Employees
+ADD CONSTRAINT FK_EmployeesDeptsId FOREIGN KEY (DepartmentID) REFERENCES Departments(DepartmentID), 
+
+--CONTINUE WITH CREATING TABLES
+
+CREATE TABLE Projects(
+ProjectID INT IDENTITY, 
+Name VARCHAR(50), 
+Description VARCHAR(MAX), 
+StartDate DATE, 
+EndDate DATE, 
+CONSTRAINT PK_ProjectsId PRIMARY KEY(ProjectID)
+)
+
+CREATE TABLE EmployeesProjects(
+EmployeeID INT,
+ProjectID INT,
+CONSTRAINT PK_EmplProjId PRIMARY KEY (EmployeeID, ProjectID),
+CONSTRAINT FK_EmplProjEmployeesId FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID),
+CONSTRAINT FK_EmplProjProjectsId FOREIGN KEY (ProjectID) REFERENCES Projects(ProjectID)
+)
+
+---===Pr. 8===---
+
+CREATE TABLE Continents(
+ContinentCode VARCHAR(10), 
+ContinentName VARCHAR(20)
+CONSTRAINT PK_ContinentsId PRIMARY KEY(ContinentCode)
+)
+
+CREATE TABLE Currencies(
+CurrencyCode VARCHAR(5), 
+Description VARCHAR(500)
+CONSTRAINT PK_CurrenciesId PRIMARY KEY(CurrencyCode)
+)
+
+CREATE TABLE Rivers(
+Id INT IDENTITY,
+RiverName VARCHAR(50),
+Length DECIMAL(8, 2),
+DrainageArea DECIMAL(8, 2),
+AverageDischarge DECIMAL(8, 2),
+Outflow VARCHAR(50)
+CONSTRAINT PK_RiversId PRIMARY KEY(Id)
+)
+
+CREATE TABLE Countries(
+CountryCode VARCHAR(10), 
+IsoCode VARCHAR(10), 
+CountryName VARCHAR(10), 
+CurrencyCode VARCHAR(5), 
+ContinentCode VARCHAR(10), 
+Population INT, 
+AreaInSqKm DECIMAL(15, 2), 
+Capital VARCHAR(50)
+CONSTRAINT PK_CountriesId PRIMARY KEY(CountryCode), 
+CONSTRAINT FK_CountrieContinents FOREIGN KEY (ContinentCode) REFERENCES Continents(ContinentCode), 
+CONSTRAINT FK_CountrieCurrencies FOREIGN KEY (CurrencyCode) REFERENCES Currencies(CurrencyCode)
+)
+
+CREATE TABLE CountriesRivers(
+RiverId INT,
+CountryCode VARCHAR(10),
+CONSTRAINT PK_CountriesRiversId PRIMARY KEY (RiverId, CountryCode),
+CONSTRAINT FK_CountrRivRiversId FOREIGN KEY (RiverId) REFERENCES Rivers(Id),
+CONSTRAINT FK_CountrRivCountriesId FOREIGN KEY (CountryCode) REFERENCES Countries(CountryCode)
+)
+
+CREATE TABLE Mountains(
+Id INT IDENTITY, 
+MountainRange VARCHAR(100)
+CONSTRAINT PK_MountainsId PRIMARY KEY(Id)
+)
+
+CREATE TABLE MountainsCountries(
+MountainId INT,
+CountryCode VARCHAR(10),
+CONSTRAINT PK_MountainsCountriesId PRIMARY KEY (MountainId, CountryCode),
+CONSTRAINT FK_MountCountrMountainsId FOREIGN KEY (MountainId) REFERENCES Mountains(Id),
+CONSTRAINT FK_MountCountrCountriesId FOREIGN KEY (CountryCode) REFERENCES Countries(CountryCode)
+)
+
+CREATE TABLE Peaks(
+Id INT IDENTITY, 
+PeakName VARCHAR(50), 
+Elevation DECIMAL(8, 2),
+MountainId INT 
+CONSTRAINT PK_PeaksId PRIMARY KEY(Id), 
+CONSTRAINT FK_PeaksMountainId FOREIGN KEY(MountainId) REFERENCES Mountains(Id)
 )
 
 ---===Pr. 9===---
