@@ -136,14 +136,13 @@ SELECT ct.ContinentCode,
 	   ct.CurrencyCode, 
 	   ct.CurrencyUsage 
   FROM (
-		SELECT c.ContinentCode, 
-			   c.CurrencyCode, 
-			   COUNT(c.CurrencyCode) AS [CurrencyUsage], 
+		SELECT ContinentCode, 
+			   CurrencyCode, 
+			   COUNT(CurrencyCode) AS [CurrencyUsage], 
 			   DENSE_RANK() OVER(PARTITION BY c.ContinentCode ORDER BY COUNT(c.CurrencyCode) DESC) as [Ranking]
-		FROM Countries AS c
-		JOIN Currencies AS curr ON curr.CurrencyCode = c.CurrencyCode
-		GROUP BY c.CurrencyCode, c.ContinentCode
-		HAVING COUNT(c.CurrencyCode) > 1
+		FROM Countries
+		GROUP BY CurrencyCode, ContinentCode
+		HAVING COUNT(CurrencyCode) > 1
 	   ) AS ct
  WHERE Ranking = 1
  ORDER BY ct.ContinentCode --works as well without this ordering
