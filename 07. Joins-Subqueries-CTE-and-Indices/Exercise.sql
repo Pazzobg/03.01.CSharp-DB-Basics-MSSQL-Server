@@ -147,6 +147,30 @@ SELECT ct.ContinentCode,
  WHERE Ranking = 1
  ORDER BY ct.ContinentCode --works as well without this ordering
 
+---===Pr. 15 Different Solution using Subquieries and JOINs, w/o DENSE_RANK()===---
+
+SELECT Usages.ContinentCode, Usages.CurrencyCode, Usages.Usage FROM 
+(
+  SELECT ContinentCode, 
+  	     CurrencyCode, 
+  	     COUNT(CurrencyCode) AS [Usage]
+    FROM Countries
+   GROUP BY CurrencyCode, ContinentCode
+  HAVING COUNT(CurrencyCode) > 1
+) AS Usages
+INNER JOIN
+(
+SELECT UsageCount.ContinentCode, MAX(UsageCount.Usage) AS [MaxUsage] FROM (
+  SELECT ContinentCode, 
+  	     CurrencyCode, 
+  	     COUNT(CurrencyCode) AS [Usage]
+    FROM Countries
+   GROUP BY CurrencyCode, ContinentCode
+  HAVING COUNT(CurrencyCode) > 1) AS UsageCount
+  GROUP BY UsageCount.ContinentCode
+) AS MaxUsages 
+ON Usages.ContinentCode = MaxUsages.ContinentCode AND Usages.Usage = MaxUsages.MaxUsage
+
 ---===Pr. 16===---
 
 SELECT COUNT(C.CountryCode) AS [CountryCode] 
