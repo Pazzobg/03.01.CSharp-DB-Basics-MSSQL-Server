@@ -216,9 +216,28 @@ HAVING AVG(Rate) between 5 and 8
 
 ---===Pr. 14===---
 
+SELECT TOP 1 WITH TIES 
+	   co.Name [CountryName], 
+	   AVG(f.Rate) [FeedbackRate] 
+  FROM Countries co
+  JOIN Customers cu ON cu.CountryId = co.Id
+  JOIN Feedbacks f ON f.CustomerId = cu.Id
+ GROUP BY co.Name
+ ORDER BY FeedbackRate DESC
 
 ---===Pr. 15===---
 
+SELECT CountryName, DistributorName 
+  FROM (SELECT c.Name [CountryName], 
+	  	       d.Name [DistributorName], 
+	  	       COUNT(i.Id) [IngredientsCount], 
+	  	       DENSE_RANK() OVER (PARTITION BY c.Name ORDER BY COUNT(i.Id) DESC) [Ranking]
+	      FROM Countries c
+	      JOIN Distributors d ON d.CountryId = c.Id
+	      JOIN Ingredients i ON i.DistributorId = d.Id
+	     GROUP BY d.Name, c.Name) AS dr
+ WHERE dr.Ranking = 1
+ ORDER BY CountryName, DistributorName
 
 ---===Pr. 16===---
 
@@ -237,13 +256,13 @@ GO
 ---===Pr. 17===---
 
 CREATE FUNCTION udf_GetRating (@Name NVARCHAR(25))
-RETURNS VARCHAR(7)
+RETURNS VARCHAR(10)
 AS
 BEGIN
-  DECLARE @result VARCHAR(7);
+  DECLARE @result VARCHAR(10);
   DECLARE @rating DECIMAL(10, 2);
 
-  SET @rating = (SELECT Rate 
+  SET @rating = (SELECT AVG(Rate)
 				   FROM Feedbacks f
 				   JOIN Products p ON p.Id = f.ProductId
 				  WHERE p.Name = @Name)
@@ -274,7 +293,79 @@ SELECT TOP 5 Id, Name, dbo.udf_GetRating(Name)
   FROM Products
  ORDER BY Id
 
+---===Pr. 18===---
 
- 
+GO
 
+CREATE PROC usp_SendFeedback(@custId INT, @prodId INT, @rating DECIMAL(10, 2), @description NVARCHAR(255))
+AS
+BEGIN
+	BEGIN TRANSACTION
+	INSERT INTO Feedbacks (CustomerId, ProductId, Rate, Description) VALUES
+	(@custId, @prodId, @rating, @description)
+	
+	DECLARE @currNumOfFeedbs INT = (SELECT COUNT(Id) 
+									  FROM Feedbacks
+									 WHERE CustomerId = @custId
+									   AND ProductId = @prodId)
+	
+	IF(@currNumOfFeedbs > 3)
+	BEGIN
+		RAISERROR('You are limited to only 3 feedbacks per product!', 16, 1)
+		ROLLBACK
+		RETURN
+	END
+	ELSE
+	BEGIN
+		COMMIT
+	END
+END
 
+GO
+
+EXEC usp_SendFeedback 1, 5, 7.50, 'Average experience'; 
+SELECT * FROM Feedbacks WHERE CustomerId = 1 AND ProductId = 5;
+
+---===Pr. 19===---
+
+GO 
+CREATE TRIGGER dbo.tr_DeleteProduct ON Products INSTEAD OF DELETE
+AS
+BEGIN
+	DELETE FROM ProductsIngredients
+	 WHERE ProductId = (SELECT Id FROM deleted)
+
+	DELETE FROM Feedbacks
+	 WHERE ProductId = (SELECT Id FROM deleted)
+
+	DELETE FROM Products
+	 WHERE Id = (SELECT Id FROM deleted)
+END
+
+---===Pr. 20===---
+
+SELECT ProductName, 
+	   ProductAverageRate, 
+	   DistributorName, 
+	   DistributorCountry
+  FROM (SELECT p.Name [ProductName], 
+			   AVG(f.Rate) [ProductAverageRate], 
+			   d.Name [DistributorName], 
+			   c.Name [DistributorCountry],
+			   p.Id [ProductId]
+		  FROM ( SELECT p.Id
+						  FROM Products p
+						  JOIN ProductsIngredients prin ON prin.ProductId = p.Id
+						  JOIN Ingredients i ON i.Id = prin.IngredientId
+						  JOIN Distributors d ON d.Id = i.DistributorId
+						 GROUP BY p.Id
+						HAVING COUNT(DISTINCT(i.DistributorId)) = 1) AS ProdSingleDistr
+		  JOIN Products p ON p.Id = ProdSingleDistr.Id
+		  JOIN ProductsIngredients prin ON prin.ProductId = p.Id
+		  JOIN Ingredients i ON i.Id = prin.IngredientId
+		  JOIN Distributors d ON d.Id = i.DistributorId
+		  JOIN Feedbacks f ON f.ProductId = p.Id
+		  JOIN Countries c ON c.Id = d.CountryId
+		 GROUP BY p.Name, d.Name, c.Name, p.Id
+		)   AS result
+ ORDER BY result.ProductId
