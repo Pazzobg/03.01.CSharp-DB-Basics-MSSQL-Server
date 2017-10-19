@@ -4,3 +4,5 @@ SoftUni - C# DB Fundamentals Module
 
 
 This course covers the fundamental knowledge about databases, relational model, data modelling and working with SQL (CRUD, Selects, aggregating data, JOINs, procedures, functions, triggers...)
+
+TEST TEST TEST
